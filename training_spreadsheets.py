@@ -1,11 +1,14 @@
 import os
 
+from dotenv import load_dotenv
 from apiclient import discovery
 from google.oauth2.service_account import Credentials
-from dotenv import load_dotenv
+
 
 
 load_dotenv('.env')
+
+EMAIL_USER = os.environ['EMAIL']
 
 SCOPES = [
          'https://www.googleapis.com/auth/spreadsheets',
@@ -56,7 +59,7 @@ def create_spreadsheet(service):
 def set_user_permissions(spreadsheet_id, credentials):
     permissions_body = {'type': 'user',  # Тип учетных данных.
                         'role': 'writer',  # Права доступа для учётной записи.
-                        'emailAddress': os.environ['EMAIL']
+                        'emailAddress': EMAIL_USER
                         # Персональный гугл-аккаунт.
                         }
     # Создаётся экземпляр класса Resource для Google Drive API.
@@ -70,6 +73,34 @@ def set_user_permissions(spreadsheet_id, credentials):
     ).execute()
 
 
+def spreadsheet_update_values(service, spreadsheetId):
+    # Данные для заполнения: выводятся в таблице сверху вниз, слева направо.
+    table_values = [
+        ['Бюджет путешествий'],
+        ['Весь бюджет', '5000'],
+        ['Все расходы', '=SUM(E7:E30)'],
+        ['Остаток', '=B2-B3'],
+        ['Расходы'],
+        ['Описание', 'Тип', 'Кол-во', 'Цена', 'Стоимость'],
+        ['Перелет', 'Транспорт', '2', '400', '=C7*D7']
+    ]
+    
+    # Тело запроса.
+    request_body = {
+        'majorDimension': 'ROWS',
+        'values': table_values
+    }
+    # Формирование запроса к Google Sheets API. 
+    request = service.spreadsheets().values().update(
+        spreadsheetId=spreadsheetId,
+        range='Отпуск 2077!A1:F20',
+        valueInputOption='USER_ENTERED',
+        body=request_body
+    )
+    # Выполнение запроса.
+    request.execute()
+
 service, credentials = auth()
 spreadsheetId = create_spreadsheet(service)
 set_user_permissions(spreadsheetId, credentials)
+spreadsheet_update_values(service, spreadsheetId)
