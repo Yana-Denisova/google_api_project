@@ -5,7 +5,6 @@ from apiclient import discovery
 from google.oauth2.service_account import Credentials
 
 
-
 load_dotenv('.env')
 
 EMAIL_USER = os.environ['EMAIL']
@@ -15,13 +14,24 @@ SCOPES = [
          'https://www.googleapis.com/auth/drive',
 ]
 
-CREDENTIALS_FILE = os.environ['CREDENTIALS']
+info = {
+    'type':  os.environ['TYPE'],
+    'project_id':  os.environ['PROJECT_ID'],
+    'private_key_id':  os.environ['PRIVATE_KEY_ID'],
+    'private_key':  os.environ['PRIVATE_KEY'],
+    'client_email':  os.environ['CLIENT_EMAIL'],
+    'client_id':  os.environ['CLIENT_ID'],
+    'auth_uri':  os.environ['AUTH_URI'],
+    'token_uri':  os.environ['TOKEN_URI'],
+    'auth_provider_x509_cert_url':  os.environ['AUTH_PROVIDER_X509_CERT_URL'],
+    'client_x509_cert_url':  os.environ['CLIENT_X509_CERT_URL']
+}
 
 
 def auth():
     'Функция авторизации. Создаём экземпляр класса Credentials и Resource'
-    credentials = Credentials.from_service_account_file(
-                  filename=CREDENTIALS_FILE, scopes=SCOPES)
+    credentials = Credentials.from_service_account_info(
+                  info=info, scopes=SCOPES)
     service = discovery.build('sheets', 'v4', credentials=credentials)
     return service, credentials
 
@@ -84,13 +94,13 @@ def spreadsheet_update_values(service, spreadsheetId):
         ['Описание', 'Тип', 'Кол-во', 'Цена', 'Стоимость'],
         ['Перелет', 'Транспорт', '2', '400', '=C7*D7']
     ]
-    
+
     # Тело запроса.
     request_body = {
         'majorDimension': 'ROWS',
         'values': table_values
     }
-    # Формирование запроса к Google Sheets API. 
+    # Формирование запроса к Google Sheets API.
     request = service.spreadsheets().values().update(
         spreadsheetId=spreadsheetId,
         range='Отпуск 2077!A1:F20',
@@ -99,6 +109,7 @@ def spreadsheet_update_values(service, spreadsheetId):
     )
     # Выполнение запроса.
     request.execute()
+
 
 service, credentials = auth()
 spreadsheetId = create_spreadsheet(service)
